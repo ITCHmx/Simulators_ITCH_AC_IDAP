@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Juego Locutor Redes - Final</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #000; overflow: hidden; }
+        #escena { position: relative; width: 100%; height: 100vh; }
+        
+        #fondo { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: -1; transition: opacity 0.2s ease; }
+        
+        /* --- Contenedor de Capturas de Pantalla --- */
+        #contenedor-capturas {
+            position: absolute;
+            top: 80px;
+            left: 540px; /* Posición base por defecto */
+            width: 390px;
+            height: 440px;
+            z-index: 2;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            transition: left 0.3s ease, top 0.3s ease, width 0.3s ease, height 0.3s ease; /* Transiciones suaves */
+        }
+        #img-captura {
+            max-width: 100%;
+            max-height: 85%;
+            object-fit: contain;
+            border: 3px solid #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.6);
+        }
+        #btn-cambiar-img {
+            margin-top: 10px;
+            padding: 6px 16px;
+            background: #22c55e;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            transition: background 0.2s;
+        }
+        #btn-cambiar-img:hover { background: #16a34a; }
+
+        /* Contenedor Personaje (Ubicado a la izquierda para no obstruir el simulador) */
+        #contenedor-personaje {
+            position: absolute;
+            bottom: 20px; 
+            left: 40px;
+            display: flex;
+            flex-direction: column-reverse; 
+            align-items: center; 
+            z-index: 1;
+            transition: all 0.5s ease-in-out;
+        }
+
+        #personaje { 
+            height: 390px; 
+            background-color: transparent !important;
+            margin-bottom: -5px; 
+            object-position: bottom center;
+        }
+
+        #mensaje {
+            background: rgba(255,255,255,0.60); 
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #000; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            max-width: 550px;
+            max-height: 280px;
+            overflow-y: auto;
+            text-align: left;
+            position: relative;
+            line-height: 1.4;
+        }
+
+        #mensaje::after {
+            content: '';
+            position: absolute;
+            top: -15px; left: 50%; transform: translateX(-50%);
+            border-width: 0 15px 15px; border-style: solid;
+            border-color: transparent transparent rgba(255,255,255,0.60); 
+        }
+
+        /* Contenedor Simulador Activo en la parte derecha / enmedio y compacto */
+        #contenedor-simulador {
+            position: absolute;
+            top: 50%;
+            right: 40px;
+            transform: translateY(-50%);
+            width: 360px;
+            height: 400px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 3px solid #38bdf8;
+            border-radius: 20px;
+            display: flex; 
+            flex-direction: column;
+            z-index: 5;
+            padding: 20px;
+            color: white;
+            font-family: 'Courier New', monospace;
+            box-sizing: border-box;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+        }
+
+        #pnl-tecnico { 
+            font-size: 14px; 
+            color: #38bdf8; 
+            margin-bottom: 15px; 
+            text-align: center; 
+            font-weight: bold;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 10px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        #escenario-maestro { 
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        #consola-red {
+            font-size: 12px;
+            color: #a78bfa;
+            line-height: 1.5;
+            white-space: pre-line;
+        }
+
+        .btn-nav { position: absolute; left: 40px; padding: 12px 25px; font-size: 16px; border: none; border-radius: 10px; cursor: pointer; color: white; z-index: 10; transition: all 0.3s ease; font-weight: bold; }
+        #btn-siguiente { bottom: 500px; background: #007BFF; }
+        #btn-anterior { bottom: 560px; background: #6c757d; }
+        .oculto { display: none; }
+    </style>
+</head>
+<body onload="inicializarEscena()">
+
+    <div id="escena">
+        <img id="fondo" src="imagenes/Laboratorio_Entrada.jpg">
+        
+        <div id="contenedor-capturas">
+            <img id="img-captura" src="" alt="Paso Windows">
+            <button id="btn-cambiar-img">Siguiente Imagen ➔</button>
+        </div>
+
+        <div id="contenedor-simulador">
+            <div id="pnl-tecnico">Iniciando sistema de redes...</div>
+            <div id="escenario-maestro">
+                <div id="consola-red"></div>
+            </div>
+        </div>
+
+        <div id="contenedor-personaje">
+            <div id="mensaje"></div>
+            <img id="personaje" src="">
+        </div>
+    </div>
+
+    <button id="btn-siguiente" class="btn-nav">Siguiente</button>
+    <button id="btn-anterior" class="btn-nav oculto">Anterior</button>
+
+    <script>
+        const escenas = [
+            { 
+                fondo: "imagenes/Laboratorio_Entrada.jpg", 
+                pers: "imagenes/Mapache_Saluda.png", 
+                msg: `!Hola Mapaches¡ Antes de conectar las tres computadoras \n\n👉Primero hay verificar que la tarjeta de red funciona en Windows:\n\nPrimero presiona Windows + S en tu teclado.\n\nEscribe Administrador de dispositivos.\n\nÁbrelo y busca la sección Adaptadores de red.\n\nSi aparece tu tarjeta sin ícono amarillo, el driver está bien. Si aparece con advertencia, falta instalar el driver.`,
+                log: "STATUS: Verificando Hardware...\n> devmgmt.msc\n> Buscando Adaptadores de Red...\n[OK] Driver de red operativo.",
+                titulo: "PASO 0: DIAGNÓSTICO",
+                imagenes: []
+            },
+            { 
+                fondo: "imagenes/Laboratorio_Puerta.jpg", 
+                pers: "imagenes/Mapache_Izquierda.png", 
+                msg: `⚙️ Ahora si estos son los pasos completos para conectar las tres computadoras en Windows\nPero antes, entremos al aula.`,
+                log: "STATUS: Inicializando Guía de Red\n> Carga de topología LAN...\n> Nodos requeridos: 3 PCs.\n> Estado: Esperando implementación.",
+                titulo: "CONFIGURACIÓN LAN",
+                imagenes: []
+            },
+            { 
+                fondo: "imagenes/Laboratorio_Animado.jpg", 
+                pers: "imagenes/Mapache_ManosAbiertas.png", 
+                msg: `🔧 Paso 1: Conexión física\nColoca el switch en un lugar central.\n\nConecta cada computadora al switch con un cable Ethernet.\n\nVerifica que las luces del switch y de las tarjetas de red estén encendidas (indican que hay conexión física).`,
+                log: "STATUS: Capa Física (Capa 1)\n> Enlazando PC1 -> Switch (Puerto 1)\n> Enlazando PC2 -> Switch (Puerto 2)\n> Enlazando PC3 -> Switch (Puerto 3)\n[LINK] Luces de enlace activas.",
+                titulo: "PASO 1: CONEXIÓN FÍSICA",
+                imagenes: []
+            },
+            { 
+                fondo: "imagenes/Laboratorio_Animado.jpg", 
+                pers: "imagenes/Mapache_Explica_ConDedo.png", 
+                msg: `🖥️ Paso 2: Configuración de IP en cada computadora\nHaz lo mismo en las tres PC, cambiando solo la dirección IP:\n\nPresiona Windows + S y escribe: Panel de control.\n\nÁbrelo.\n\nVe a Centro de redes y recursos compartidos.\n\nEn la barra lateral izquierda, selecciona Cambiar configuración del adaptador.\n\nHaz clic derecho sobre Ethernet → selecciona Propiedades.\n\nEn la lista, selecciona Protocolo de Internet versión 4 (TCP/IPv4) → clic en Propiedades.\n\nMarca la opción Usar la siguiente dirección IP.\n\nAsigna:\n\nPC1 → IP: 192.168.1.2 | Máscara: 255.255.255.0 | Puerta de enlace: 192.168.1.1 (si hay router).\n\nPC2 → IP: 192.168.1.3 | Máscara: 255.255.255.0 | Puerta de enlace: 192.168.1.1.\n\nPC3 → IP: 192.168.1.4 | Máscara: 255.255.255.0 | Puerta de enlace: 192.168.1.1.\n\nHaz clic en Aceptar → Cerrar.`,
+                log: "STATUS: Capa de Red (TCP/IPv4)\n> PC1: 192.168.1.2\n> PC2: 192.168.1.3\n> PC3: 192.168.1.4\n> Netmask: 255.255.255.0\n[OK] Direccionamiento asignado.",
+                titulo: "PASO 2: ASIGNACIÓN IP",
+                imagenes: ["imagenes/1a.png", "imagenes/2a.png", "imagenes/3a.png", "imagenes/4a.png", "imagenes/5a.png"]
+            },
+            { 
+                fondo: "imagenes/Laboratorio_Animado.jpg", 
+                pers: "imagenes/Mapache_Explica_ConDedo.png", 
+                msg: `📡 Paso 3: Verificación de conexión\nEn cada PC, abre el buscador di Windows y escribe: cmd.\n\nAbre la aplicación Símbolo del sistema.\n\nDesde PC1 escribe: ping 192.168.1.3 y luego ping 192.168.1.4.\n\nDesde PC2 escribe: ping 192.168.1.2 y ping 192.168.1.4.\n\nDesde PC3 escribe: ping 192.168.1.2 y ping 192.168.1.3.\n\nSi recibes respuestas con tiempo en milisegundos, la red está activa.`,
+                log: "STATUS: Prueba ICMP (Ping)\n> PC1 a PC2/PC3... [ÉXITO]\n> PC2 a PC1/PC3... [ÉXITO]\n> PC3 a PC1/PC2... [ÉXITO]\n[STATUS] Paquetes: Enviados=4, Recibidos=4.",
+                titulo: "PASO 3: PRUEBA PING",
+                imagenes: ["imagenes/6a.png"]
+            },
+            { 
+                fondo: "imagenes/Laboratorio_Animado.jpg", 
+                pers: "imagenes/Mapache_ManosAbiertas.png", 
+                msg: `📂 Paso 4: Activar uso compartido de archivos\nEn cada PC abre el buscador y escribe: Centro de redes y recursos compartidos.\n\nEn la barra lateral, selecciona Cambiar configuración de uso compartido avanzado.\n\nActiva:\n\n“Detección de redes”.\n\n“Compartir archivos e impresoras”.\n\nCrea una carpeta en cada PC → clic derecho → Propiedades → pestaña Compartir → “Compartir con usuarios específicos”.\n\nAsigna permisos (solo lectura o lectura/escritura).`,
+                log: "STATUS: Servicios de Red\n> Habilitando Network Discovery...\n> Iniciando Server Service (LanmanServer)\n> Permisos: Lectura/Escritura otorgados.",
+                titulo: "PASO 4: COMPARTIR RECURSOS",
+                imagenes: ["imagenes/7a.png", "imagenes/8a.png", "imagenes/9a.png"]
+            },
+            { 
+                fondo: "imagenes/Laboratorio_Animado.jpg", 
+                pers: "imagenes/Mapache_ManosAbiertas.png", 
+                msg: `📁 Paso 5: Acceso a recursos compartidos\nAbre el Explorador de archivos en Windows.\n\nEn la barra lateral, selecciona Red.\n\nVerifica que aparezcan las otras dos computadoras.\n\nHaz doble clic en la carpeta compartida para acceder.\n\nCopia un archivo de PC1 a PC2 y ábrelo en PC2.\n\nHaz lo mismo entre PC2 y PC3.`,
+                log: "STATUS: Transferencia de Datos\n> Abriendo explorer.exe -> Red\n> Enlazando con remoto \\\\192.168.1.3\n> Copiando archivo exitosamente.\n[FIN DE CONFIGURACIÓN LAN]",
+                titulo: "PASO 5: ACCESO REMOTO",
+                imagenes: ["imagenes/10a.png"]
+            },
+            { 
+                fondo: "imagenes/Laboratorio_Animado.jpg", 
+                pers: "imagenes/Mapache_ManosAbiertas.png", 
+                msg: `Y Ahora que las tres computadoras están conectadas y comparten recursos, también pueden colaborar en tareas más complejas.`,
+                log: "STATUS: Modos Avanzados\n> Red LAN lista.\n> Detectando múltiples núcleos distribuidos.\n> Preparando clúster...",
+                titulo: "COLABORACIÓN DE RED",
+                imagenes: []
+            },
+            { 
+                fondo: "imagenes/Laboratorio_Animado.jpg", 
+                pers: "imagenes/Mapache_ManosAbiertas.png", 
+                msg: `Esto se conoce como procesamiento paralelo, donde una tarea grande se divide en partes y cada computadora procesa una sección al mismo tiempo.`,
+                log: "STATUS: Cómputo Paralelo\n> Dividiendo Tarea Principal...\n> [Nodo 1 - PC1]: Procesando Parte A\n> [Nodo 2 - PC2]: Procesando Parte B\n> [Nodo 3 - PC3]: Procesando Parte C",
+                titulo: "PROCESAMIENTO PARALELO",
+                imagenes: []
+            },
+            { 
+                fondo: "imagenes/Laboratorio_Animado.jpg", 
+                pers: "imagenes/Mapache_ManosAbiertas.png", 
+                msg: `Al final, los resultados se combinan, logrando mayor velocidad y eficiencia que si un solo equipo trabajara en todo el problema.`,
+                log: "STATUS: Sincronización\n> Recibiendo sub-resultados...\n> Combinando matrices de datos...\n[ÉXITO] Tarea completada a triple velocidad.",
+                titulo: "SIMULACIÓN COMPLETADA",
+                imagenes: []
+            }
+        ];
+
+        let indice = 0;
+        let subIndiceImg = 0; 
+        
+        const pnlTecnico = document.getElementById("pnl-tecnico");
+        const consolaRed = document.getElementById("consola-red");
+        const contenedorCapturas = document.getElementById("contenedor-capturas");
+        const imgCaptura = document.getElementById("img-captura");
+        const btnCambiarImg = document.getElementById("btn-cambiar-img");
+
+        function actualizarSimulador(num) {
+            const escena = escenas[num];
+            pnlTecnico.innerText = escena.titulo;
+            consolaRed.innerText = escena.log;
+
+            subIndiceImg = 0; 
+            if (escena.imagenes && escena.imagenes.length > 0) {
+                contenedorCapturas.style.display = "flex";
+                imgCaptura.src = escena.imagenes[subIndiceImg];
+                
+                // --- AJUSTE DE POSICIÓN HORIZONTAL (LEFT) ---
+                if (num === 3) {
+                    contenedorCapturas.style.left = "550px"; // Escena 4: Un poco más a la derecha (antes 500px)
+                } else if (num === 4) {
+                    contenedorCapturas.style.left = "640px"; 
+                } else {
+                    contenedorCapturas.style.left = "540px"; // Por defecto para el resto
+                }
+
+                // --- AJUSTE DE TAMAÑO Y POSICIÓN VERTICAL (TOP) ---
+                if (num === 3) {
+                    // Escena 4: Un poco más hacia arriba que antes (top: -15px)
+                    contenedorCapturas.style.top = "-15px";      
+                    contenedorCapturas.style.width = "530px";   
+                    contenedorCapturas.style.height = "560px";  
+                } else if (num === 5) {
+                    // Escena 6: Subida un poco más hacia arriba también (top: -15px)
+                    contenedorCapturas.style.top = "-15px";      
+                    contenedorCapturas.style.width = "530px";   
+                    contenedorCapturas.style.height = "560px";  
+                } else {
+                    // Valores base por defecto
+                    contenedorCapturas.style.top = "80px";
+                    contenedorCapturas.style.width = "390px";
+                    contenedorCapturas.style.height = "440px";
+                }
+
+                if (escena.imagenes.length > 1) {
+                    btnCambiarImg.style.display = "inline-block";
+                } else {
+                    btnCambiarImg.style.display = "none";
+                }
+            } else {
+                contenedorCapturas.style.display = "none";
+            }
+        }
+
+        function cambiarEscena(nuevoIndice) {
+            indice = nuevoIndice;
+            const escena = escenas[indice];
+            const fondo = document.getElementById("fondo");
+            const personaje = document.getElementById("personaje");
+            const mensaje = document.getElementById("mensaje");
+
+            fondo.style.opacity = 0;
+            setTimeout(() => {
+                fondo.src = escena.fondo;
+                personaje.src = escena.pers;
+                
+                mensaje.innerHTML = escena.msg.replace(/\n/g, "<br>");
+                personaje.style.height = "390px"; 
+                
+                actualizarSimulador(indice);
+                
+                document.getElementById("btn-anterior").classList.toggle("oculto", indice === 0);
+                document.getElementById("btn-siguiente").innerText = (indice === escenas.length - 1) ? "Fin" : "Siguiente";
+                fondo.style.opacity = 1;
+            }, 150);
+        }
+
+        function inicializarEscena() { cambiarEscena(0); }
+
+        btnCambiarImg.addEventListener("click", () => {
+            const listaImgs = escenas[indice].imagenes;
+            if (listaImgs && listaImgs.length > 1) {
+                subIndiceImg = (subIndiceImg + 1) % listaImgs.length;
+                imgCaptura.src = listaImgs[subIndiceImg];
+            }
+        });
+
+        document.getElementById("btn-siguiente").addEventListener("click", () => { 
+            if (indice < escenas.length - 1) {
+                cambiarEscena(indice + 1); 
+            } else {
+                alert("¡Has terminado la lección sobre redes y procesamiento paralelo!");
+            }
+        });
+        
+        document.getElementById("btn-anterior").addEventListener("click", () => { if (indice > 0) cambiarEscena(indice - 1); });
+    </script>
+</body>
+</html>

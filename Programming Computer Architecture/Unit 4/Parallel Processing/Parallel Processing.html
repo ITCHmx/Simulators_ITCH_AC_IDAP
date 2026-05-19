@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Raccoon I/O Game - Parallel Processing</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #000;
+            overflow: hidden;
+        }
+
+        #escena {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+        }
+
+        #fondo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            transition: opacity 0.2s ease;
+        }
+
+        /* Container to group character and text */
+        #contenedor-personaje {
+            position: absolute;
+            bottom: 20px;
+            display: flex;
+            flex-direction: column-reverse;
+            /* Message on top, character below */
+            align-items: center;
+            z-index: 1;
+            transition: all 0.5s ease-in-out;
+        }
+
+        #personaje {
+            height: 500px;
+            width: auto;
+            background-color: transparent !important;
+            margin-top: -30px;
+            margin-bottom: 0px;
+            object-fit: contain;
+            object-position: bottom center;
+        }
+
+        #mensaje {
+            background: rgba(255, 255, 255, 0.85);
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #000;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            max-width: 650px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        #mensaje h2 {
+            font-size: 22px;
+            margin: 0 0 10px 0;
+            color: #007BFF;
+            text-transform: uppercase;
+        }
+
+        /* Speech bubble triangle */
+        #mensaje::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 15px 15px 0;
+            border-style: solid;
+            border-color: rgba(255, 255, 255, 0.85) transparent transparent;
+        }
+
+        /* Buttons on the top right */
+        .btn-nav {
+            position: absolute;
+            top: 20px;
+            padding: 12px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            z-index: 10;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        #btn-siguiente {
+            right: 20px;
+            background: #28a745;
+        }
+
+        #btn-anterior {
+            right: 200px;
+            background: #6c757d;
+        }
+
+        .btn-nav:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        .btn-nav:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .oculto {
+            display: none !important;
+        }
+
+        /* Performance Simulation Elements - Adjusted to the left */
+        #simulacion-overlay {
+            position: absolute;
+            top: 90px;
+            right: 150px;
+            width: 55%;
+            max-width: 750px;
+            background: rgba(15, 15, 25, 0.9);
+            border: 2px solid #007BFF;
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            gap: 25px;
+            color: #fff;
+            z-index: 5;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            box-sizing: border-box;
+        }
+
+        .panel-progreso {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .grupo-barra {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .etiqueta-barra {
+            font-weight: bold;
+            font-size: 14px;
+            color: #ddd;
+        }
+
+        .barra-contenedor {
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 10px;
+            padding: 2px;
+            overflow: hidden;
+        }
+
+        .barra {
+            height: 22px;
+            border-radius: 8px;
+            width: 0%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            box-sizing: border-box;
+        }
+
+        .barra-rapida {
+            background: linear-gradient(90deg, #28a745, #5cd65c);
+            color: #fff;
+        }
+
+        .barra-lenta {
+            background: linear-gradient(90deg, #dc3545, #ff6b6b);
+            color: #fff;
+        }
+
+        /* Console / Data Execution Panel */
+        .panel-consola {
+            flex: 1;
+            background: #05050a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 12px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            color: #00ff66;
+            height: 140px;
+            overflow-y: hidden;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            box-sizing: border-box;
+        }
+
+        .linea-log {
+            margin: 2px 0;
+            opacity: 0.9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+
+<body onload="inicializarEscena()">
+    <div id="escena">
+        <img id="fondo" src="" alt="Background">
+
+        <div id="simulacion-overlay" class="oculto">
+            <div class="panel-progreso">
+                <div class="grupo-barra">
+                    <div class="etiqueta-barra">🚀 3-Computer Network (Parallel Processing)</div>
+                    <div class="barra-contenedor">
+                        <div id="barra-3pc" class="barra barra-rapida">0%</div>
+                    </div>
+                </div>
+                <div class="grupo-barra">
+                    <div class="etiqueta-barra">🐌 Single Computer (Sequential Processing)</div>
+                    <div class="barra-contenedor">
+                        <div id="barra-1pc" class="barra barra-lenta">0%</div>
+                    </div>
+                </div>
+            </div>
+            <div id="consola-logs" class="panel-consola"></div>
+        </div>
+
+        <div id="contenedor-personaje">
+            <div id="mensaje">Loading...</div>
+            <img id="personaje" src="" alt="Speaker">
+        </div>
+    </div>
+
+    <button id="btn-siguiente" class="btn-nav">Next</button>
+    <button id="btn-anterior" class="btn-nav oculto">Previous</button>
+
+    <script>
+        const escenas = [
+            {
+                fondo: "Dinosaurio/imagenes/Laboratorio_MonitorApagado.jpg",
+                pers: "Dinosaurio/imagenes/Mapache_Saluda.png",
+                msg: "Hello Raccoons! “The task we will perform will be to add up all the numbers from one to nine hundred thousand. It is a large calculation, ideal for showing the difference between doing it on a single computer and doing it in parallel with three computers connected in a network.”",
+                titulo: "Step 1: Task Definition",
+                simular: false
+            },
+            {
+                fondo: "Dinosaurio/imagenes/2B.png",
+                pers: "Dinosaurio/imagenes/Mapache_Explica_ConDedo.png",
+                msg: "“First, we load the full task onto a single computer. The simulator shows how the system receives the instruction, but we won't execute it just yet. The task remains ready, waiting to be processed.”",
+                titulo: "Step 2: Loading the task on one computer",
+                simular: false
+            },
+            {
+                fondo: "Dinosaurio/imagenes/3B.png",
+                pers: "Dinosaurio/imagenes/Mapache_ManosAbiertas.png",
+                msg: "*“Now we load the same task onto three computers connected in a network. We divide the calculation into three blocks:<br><br><b>PC1:</b> sum from one to three hundred thousand.<br><b>PC2:</b> sum from three hundred and one thousand to six hundred thousand.<br><b>PC3:</b> sum from six hundred and one thousand to nine hundred thousand.<br><br>Each computer receives its share of the task.”*",
+                titulo: "Step 3: Loading the task on three computers",
+                simular: false
+            },
+            {
+                fondo: "Dinosaurio/imagenes/1B.png",
+                pers: "Dinosaurio/imagenes/Mapache_Explica_ConDedo.png",
+                msg: "“The simulator starts the execution in both scenarios: the single computer begins processing its entire task, while the three computers work in parallel with their assigned blocks. We can see how the partial results from the three PCs are quickly combined into a shared file.”",
+                titulo: "Step 4: Simultaneous execution",
+                simular: true
+            },
+            {
+                fondo: "Dinosaurio/imagenes/3B.png",
+                pers: "Dinosaurio/imagenes/Mapache_ManosAbiertas.png",
+                msg: "“As you can see, the three computers finished first.”",
+                titulo: "Step 5: Comparison of results",
+                simular: true
+            },
+            {
+                fondo: "Dinosaurio/imagenes/2B.png",
+                pers: "Dinosaurio/imagenes/Mapache_Explica_ConDedo.png",
+                msg: "“...while the single computer keeps processing and seems like it will take a bit longer to reach the final result.”",
+                titulo: "Step 5: Comparison of results",
+                simular: true
+            },
+            {
+                fondo: "Dinosaurio/imagenes/3B.png",
+                pers: "Dinosaurio/imagenes/Mapache_Saluda.png",
+                msg: "“This demonstrates the advantage of distributed parallel processing: dividing the workload among multiple machines reduces the total execution time.”",
+                titulo: "Step 5: Comparison of results",
+                simular: true /* Changed to true so the simulator stays visible in this scene */
+            },
+            {
+                fondo: "Dinosaurio/imagenes/5B.png",
+                pers: "Dinosaurio/imagenes/Mapache_ManosAbiertas.png",
+                msg: "*“This same principle applies to many technological areas we use every day. For example, in movie rendering or digital animations, studios split each scene into fragments and process them in parallel across multiple computers, reducing weeks of work to just days.”*",
+                titulo: "Step 6: Relatable and easy-to-understand examples",
+                simular: false
+            },
+            {
+                fondo: "Dinosaurio/imagenes/6B.png",
+                pers: "Dinosaurio/imagenes/Mapache_Explica_ConDedo.png",
+                msg: "*“It also happens on social media platforms, where millions of posts are processed in parallel on distributed servers so that users receive content instantly.”*",
+                titulo: "Step 6: Relatable and easy-to-understand examples",
+                simular: false
+            },
+            {
+                fondo: "Dinosaurio/imagenes/7B.png",
+                pers: "Dinosaurio/imagenes/Mapache_ManosAbiertas.png",
+                msg: "*“Even in big data analysis, information is distributed among different servers working simultaneously, achieving results that would be impossible for a single machine.”*",
+                titulo: "Step 6: Relatable and easy-to-understand examples",
+                simular: false
+            },
+            {
+                fondo: "Dinosaurio/imagenes/4B.png",
+                pers: "Dinosaurio/imagenes/Mapache_Saluda.png",
+                msg: "*“In all cases, the goal is the same: leveraging collaboration to achieve faster and more efficient results.”*",
+                titulo: "Step 6: Relatable and easy-to-understand examples",
+                simular: false
+            }
+        ];
+
+        let indice = 0;
+        let simInterval = null;
+        let logInterval = null;
+        let progresoRapido = 0;
+        let progresoLento = 0;
+
+        const btnSig = document.getElementById("btn-siguiente");
+        const btnAnt = document.getElementById("btn-anterior");
+        const fondo = document.getElementById("fondo");
+        const personaje = document.getElementById("personaje");
+        const mensaje = document.getElementById("mensaje");
+        const contenedor = document.getElementById("contenedor-personaje");
+        const simulacionOverlay = document.getElementById("simulacion-overlay");
+        const barra3PC = document.getElementById("barra-3pc");
+        const barra1PC = document.getElementById("barra-1pc");
+        const consolaLogs = document.getElementById("consola-logs");
+
+        function ajustarPosicionContenedor(numEscena) {
+            contenedor.style.left = "auto";
+            contenedor.style.right = "auto";
+            contenedor.style.transform = "none";
+
+            // Scene 1 (index 0): Center
+            if (numEscena === 0) {
+                contenedor.style.left = "50%";
+                contenedor.style.transform = "translateX(-50%)";
+            }
+            // From Scene 2 (index 1) until the simulator ends (now extended to index 6)
+            else if (numEscena >= 1 && numEscena <= 6) {
+                contenedor.style.left = "40px";
+            }
+            // After the simulator
+            else {
+                const posicionSecundaria = numEscena % 2;
+                if (posicionSecundaria === 0) {
+                    contenedor.style.right = "80px";
+                } else {
+                    contenedor.style.left = "50%";
+                    contenedor.style.transform = "translateX(-50%)";
+                }
+            }
+        }
+
+        function actualizarUI() {
+            if (indice > 0) btnAnt.classList.remove("oculto");
+            else btnAnt.classList.add("oculto");
+            btnSig.innerText = (indice === escenas.length - 1) ? "Finish" : "Next";
+        }
+
+        function limpiarSimulacion() {
+            clearInterval(simInterval);
+            clearInterval(logInterval);
+            simInterval = null;
+            logInterval = null;
+            progresoRapido = 0;
+            progresoLento = 0;
+            barra3PC.style.width = "0%";
+            barra3PC.innerText = "0%";
+            barra1PC.style.width = "0%";
+            barra1PC.innerText = "0%";
+            consolaLogs.innerHTML = "";
+        }
+
+        function ejecutarSimulacion() {
+            if (simInterval !== null) return;
+
+            simInterval = setInterval(() => {
+                if (progresoRapido < 100) {
+                    progresoRapido += Math.floor(Math.random() * 5) + 5;
+                    if (progresoRapido > 100) progresoRapido = 100;
+                    barra3PC.style.width = progresoRapido + "%";
+                    barra3PC.innerText = progresoRapido + "%";
+                }
+
+                if (progresoLento < 35) {
+                    progresoLento += (Math.random() * 1.2);
+                } else if (progresoLento < 100) {
+                    progresoLento += 0.05;
+                }
+
+                let displayLento = Math.min(Math.floor(progresoLento), 100);
+                barra1PC.style.width = displayLento + "%";
+                barra1PC.innerText = displayLento + "%";
+            }, 150);
+
+            const operaciones = [
+                "PC1: Processing block [1 - 75000]...",
+                "PC2: Processing block [300001 - 375000]...",
+                "PC3: Processing block [600001 - 675000]...",
+                "PC1: Accumulated partial sum = 2,812,537,500",
+                "PC2: Accumulated partial sum = 25,312,537,500",
+                "PC3: Accumulated partial sum = 47,812,537,500",
+                "Single: Processing sequential loop iteration 42800...",
+                "PC1: Block 1 Completed ✔",
+                "PC2: Processing block [375001 - 450000]...",
+                "PC3: Block 1 Completed ✔",
+                "Single: RAM at 78% (Single thread)...",
+                "PC3: Combining results into central file...",
+                "PC1 & PC2 & PC3: Registry synchronization successful!",
+                "Single: Processing sequential loop iteration 112400..."
+            ];
+
+            logInterval = setInterval(() => {
+                const lineaAleatoria = operaciones[Math.floor(Math.random() * operaciones.length)];
+                const timestamp = new Date().toLocaleTimeString().split(' ')[0];
+
+                const div = document.createElement("div");
+                div.className = "linea-log";
+                div.innerHTML = `<span style="color: #007BFF;">[${timestamp}]</span> ${lineaAleatoria}`;
+                consolaLogs.appendChild(div);
+
+                if (consolaLogs.childNodes.length > 6) {
+                    consolaLogs.removeChild(consolaLogs.firstChild);
+                }
+            }, 400);
+        }
+
+        function cambiarEscena(nuevoIndice) {
+            indice = nuevoIndice;
+            const escena = escenas[indice];
+            fondo.style.opacity = 0;
+
+            if (escena.simular) {
+                simulacionOverlay.classList.remove("oculto");
+                ejecutarSimulacion();
+            } else {
+                simulacionOverlay.classList.add("oculto");
+                if (indice < 3 || indice > 6) {
+                    limpiarSimulacion();
+                }
+            }
+
+            setTimeout(() => {
+                fondo.src = escena.fondo;
+                personaje.src = escena.pers;
+
+                let tituloHTML = escena.titulo ? `<h2>${escena.titulo}</h2>` : "";
+                mensaje.innerHTML = tituloHTML + escena.msg;
+
+                ajustarPosicionContenedor(indice);
+                actualizarUI();
+                fondo.style.opacity = 1;
+            }, 150);
+        }
+
+        function inicializarEscena() {
+            cambiarEscena(0);
+        }
+
+        btnSig.addEventListener("click", () => {
+            if (indice < escenas.length - 1) cambiarEscena(indice + 1);
+            else alert("Congratulations, you have learned how parallel processing works with the Raccoons!");
+        });
+
+        btnAnt.addEventListener("click", () => {
+            if (indice > 0) {
+                if (indice === 7 || indice === 3) {
+                    limpiarSimulacion();
+                }
+                cambiarEscena(indice - 1);
+            }
+        });
+    </script>
+</body>
+
+</html>
