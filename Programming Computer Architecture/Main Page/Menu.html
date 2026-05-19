@@ -3,13 +3,13 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Raccoon Simulator</title>
+    <title>Simulador Mapache</title>
 
     <link rel="icon"
-href="Logo.png"
-type="image/x-icon">
+        href="Programacion Arquitectura de Computadoras\Programacion Arquitectura de Computadoras\Pagina_Principal\cute-raccoon-face-wild-animal-character-in-animated-cartoon-illustration-vector.png"
+        type="image/x-icon">
     <style>
-        /* --- ESTILOS ORIGINALES (con ligeros retoques) --- */
+        /* --- ESTILOS ORIGINALES --- */
         body,
         html {
             margin: 0;
@@ -18,14 +18,12 @@ type="image/x-icon">
             height: 100%;
             overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            /* Fuente más moderna */
         }
 
         .fondo {
             width: 100vw;
             height: 100vh;
             background-image: url('Mapaches.jpg');
-            /* Asegúrate de tener esta imagen */
             background-size: cover;
             background-position: center;
             display: flex;
@@ -54,7 +52,6 @@ type="image/x-icon">
             cursor: pointer;
             text-align: center;
             transition: background-color 0.3s, transform 0.1s;
-            /* Animación en hover también */
             outline: none;
         }
 
@@ -64,12 +61,9 @@ type="image/x-icon">
 
         .boton:active {
             transform: scale(0.98);
-            /* Efecto de pulsación */
         }
 
-        /* --- NUEVOS ESTILOS PARA EL POPUP ANIMADO --- */
-
-        /* El Overlay (fondo oscuro) */
+        /* --- ESTILOS PARA EL POPUP ANIMADO --- */
         .overlay {
             position: fixed;
             top: 0;
@@ -78,26 +72,19 @@ type="image/x-icon">
             height: 100%;
             background: rgba(0, 0, 0, 0.7);
             display: flex;
-            /* Usamos flex para centrar, pero lo controlamos con opacity */
             justify-content: center;
             align-items: center;
             z-index: 1000;
-
-            /* ESTADO INICIAL (OCULTO) */
             opacity: 0;
             visibility: hidden;
-
-            /* TRANSICIÓN */
             transition: opacity 0.4s ease, visibility 0.4s ease;
         }
 
-        /* Estado cuando el popup está ACTIVO */
         .overlay.active {
             opacity: 1;
             visibility: visible;
         }
 
-        /* La Ventana Popup */
         .popup {
             background: white;
             padding: 35px;
@@ -105,21 +92,14 @@ type="image/x-icon">
             text-align: center;
             min-width: 280px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-
-            /* ESTADO INICIAL (Más pequeño y transparente) */
             opacity: 0;
             transform: scale(0.7);
-            /* Empieza un 30% más pequeña */
-
-            /* TRANSICIÓN (con un ligero rebote "cubic-bezier") */
             transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* Estado de la ventana cuando está ACTIVA */
         .overlay.active .popup {
             opacity: 1;
             transform: scale(1);
-            /* Vuelve a su tamaño original */
         }
 
         .popup h2 {
@@ -134,18 +114,9 @@ type="image/x-icon">
             gap: 12px;
         }
 
-        /* Estilo específico para los botones dentro del popup */
         .contenedor-botones-popup .boton {
             font-size: 16px;
             padding: 12px;
-        }
-
-        .proximamente-txt {
-            font-size: 22px;
-            font-weight: bold;
-            color: #666;
-            margin: 20px 0;
-            font-style: italic;
         }
 
         .btn-cerrar {
@@ -170,14 +141,13 @@ type="image/x-icon">
 
     <div class="fondo">
         <div class="ventana-menu">
-            <!-- Llamamos a abrirModal -->
             <button class="boton" onclick="abrirModal('unidad4')">Unit 4 Practices</button>
             <button class="boton" onclick="abrirModal('unidad3')">Unit 3 Practices</button>
             <button class="boton" onclick="abrirModal('unidad2')">Unit 2 Practices</button>
         </div>
     </div>
 
-    <!-- Estructura del Popup (fuera del flujo principal) -->
+    <!-- Estructura del Popup -->
     <div id="miOverlay" class="overlay">
         <div class="popup">
             <h2 id="tituloPopup">Título</h2>
@@ -199,50 +169,72 @@ type="image/x-icon">
 
             // 2. Preparar el contenido según la unidad
             if (unidad === 'unidad2') {
-                titulo.innerText = "Unit 2: Available Internships";
+                titulo.innerText = "Unit 2: Available Practices";
 
-                // Botón Práctica 1
                 const btn1 = document.createElement('button');
                 btn1.className = 'boton';
                 btn1.innerText = "Practice 1: Inputs/Outputs";
-                btn1.onclick = () => window.location.href = 'https://itchmx.github.io/Simulators_ITCH_AC_IDAP/Programming%20Computer%20Architecture/Unit%202/Input_and_Output_Simulator/Exits%20and%20Entrances.html'; // Reemplazar con enlace real
+                btn1.onclick = () => window.location.href = 'https://itchmx.github.io/Simuladores_ITCH_AC_IDAP/Programacion%20Arquitectura%20de%20Computadoras/Unidad%202/Simulador_de_Salidas_Y_Entradas/Salidas%20y%20Entradas.html';
 
-                // Botón Práctica 2
                 const btn2 = document.createElement('button');
                 btn2.className = 'boton';
                 btn2.innerText = "Practice 2: Buses";
-                btn2.onclick = () => window.location.href = 'https://itchmx.github.io/Simulators_ITCH_AC_IDAP/Programming%20Computer%20Architecture/Unit%202/Bus_Simulator/Buses.html'; // Reemplazar con enlace real
+                btn2.onclick = () => window.location.href = 'https://itchmx.github.io/Simuladores_ITCH_AC_IDAP/Programacion%20Arquitectura%20de%20Computadoras/Unidad%202/Simulador_de_Buses/Buses.html';
+
+                contenido.appendChild(btn1);
+                contenido.appendChild(btn2);
+
+            } else if (unidad === 'unidad3') {
+                titulo.innerText = "Unit 3: Available Practices";
+
+                // Botón Práctica 1 - Unidad 3
+                const btn1 = document.createElement('button');
+                btn1.className = 'boton';
+                btn1.innerText = "Practice 1: Name of Practice";
+                btn1.onclick = () => window.location.href = '#enlace-unidad3-1'; // CAMBIAR ENLACE
+
+                // Botón Práctica 2 - Unidad 3
+                const btn2 = document.createElement('button');
+                btn2.className = 'boton';
+                btn2.innerText = "Practice 2: Name of Practice";
+                btn2.onclick = () => window.location.href = '#enlace-unidad3-2'; // CAMBIAR ENLACE
+
+                contenido.appendChild(btn1);
+                contenido.appendChild(btn2);
+
+            } else if (unidad === 'unidad4') {
+                titulo.innerText = "Unit 4: Available Practices";
+
+                // Botón Práctica 1 - Unidad 4
+                const btn1 = document.createElement('button');
+                btn1.className = 'boton';
+                btn1.innerText = "Practice 1: Name of Practice";
+                btn1.onclick = () => window.location.href = '#enlace-unidad4-1'; // CAMBIAR ENLACE
+
+                // Botón Práctica 2 - Unidad 4
+                const btn2 = document.createElement('button');
+                btn2.className = 'boton';
+                btn2.innerText = "Practice 2: Name of Practice";
+                btn2.onclick = () => window.location.href = '#enlace-unidad4-2'; // CAMBIAR ENLACE
 
                 contenido.appendChild(btn1);
                 contenido.appendChild(btn2);
             }
-            else {
-                // Unidad 3 o 4
-                titulo.innerText = (unidad === 'unidad3') ? "Unit 3" : "Unit 4";
-                const msg = document.createElement('p');
-                msg.className = 'proximamente-txt';
-                msg.innerText = "¡Soon!";
-                contenido.appendChild(msg);
-            }
 
-            // 3. ACTIVAR LA ANIMACIÓN añadiendo la clase 'active'
+            // 3. ACTIVAR LA ANIMACIÓN
             overlay.classList.add('active');
         }
 
         function cerrarModal() {
-            // Quitar la clase 'active' para iniciar la animación de cierre
             overlay.classList.remove('active');
         }
 
-        // Cerrar si se hace clic en el fondo oscuro
         overlay.addEventListener('click', function (event) {
-            // Si el clic fue directamente en el overlay (y no dentro del popup)
             if (event.target === overlay) {
                 cerrarModal();
             }
         });
     </script>
-
 </body>
 
 </html>
