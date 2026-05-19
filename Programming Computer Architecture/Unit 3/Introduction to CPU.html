@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive CPU Presentation</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a, #111827, #1e293b);
+            color: white;
+            overflow: hidden;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 2px solid #38bdf8;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        header h1 {
+            color: #67e8f9;
+            font-size: 2.5rem;
+        }
+
+        .main {
+            display: flex;
+            height: calc(100vh - 110px);
+        }
+
+        .cpu-area {
+            flex: 2;
+            position: relative;
+            padding: 20px;
+        }
+
+        .info-area {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .component {
+            position: absolute;
+            background: #1e293b;
+            border: 2px solid #38bdf8;
+            border-radius: 18px;
+            padding: 15px;
+            text-align: center;
+            transition: 0.5s;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+        }
+
+        .active {
+            transform: scale(1.08);
+            background: #0284c7;
+            box-shadow: 0 0 30px #38bdf8;
+        }
+
+        .memory {
+            top: 90px;
+            left: 40px;
+            width: 180px;
+        }
+
+        .control {
+            top: 90px;
+            left: 320px;
+            width: 220px;
+        }
+
+        .alu {
+            top: 340px;
+            left: 320px;
+            width: 220px;
+        }
+
+        .registers {
+            top: 90px;
+            right: 40px;
+            width: 250px;
+        }
+
+        .register {
+            background: #0f172a;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #334155;
+        }
+
+        .register span {
+            color: #facc15;
+            font-weight: bold;
+        }
+
+        .bus {
+            position: absolute;
+            background: #64748b;
+        }
+
+        .h {
+            height: 6px;
+        }
+
+        .v {
+            width: 6px;
+        }
+
+        .packet {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 15px #22c55e;
+            transition: 0.8s;
+        }
+
+        .step-title {
+            font-size: 1.8rem;
+            color: #67e8f9;
+            margin-bottom: 20px;
+        }
+
+        .explanation {
+            flex: 1;
+            line-height: 1.8;
+            background: #0f172a;
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 5px solid #38bdf8;
+            overflow: auto;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            background: #0ea5e9;
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #0284c7;
+        }
+
+        .step-counter {
+            margin-top: 15px;
+            text-align: center;
+            color: #cbd5e1;
+        }
+
+        .highlight {
+            color: #facc15;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Internal CPU Operation</h1>
+        <p>Guided presentation showing how registers process instructions</p>
+    </header>
+
+    <div class="main">
+
+        <div class="cpu-area">
+
+            <div class="component memory" id="memory">
+                <h2>RAM Memory</h2>
+                <p>LOAD 5</p>
+            </div>
+
+            <div class="component control" id="control">
+                <h2>Control Unit</h2>
+                <p>Decodes instructions</p>
+            </div>
+
+            <div class="component alu" id="alu">
+                <h2>ALU</h2>
+                <p>Performs operations</p>
+            </div>
+
+            <div class="component registers" id="registers">
+                <h2>CPU Registers</h2>
+
+                <div class="register">PC: <span id="pc">0</span></div>
+                <div class="register">MAR: <span id="mar">0</span></div>
+                <div class="register">MDR: <span id="mdr">---</span></div>
+                <div class="register">IR: <span id="ir">---</span></div>
+                <div class="register">ACC: <span id="acc">0</span></div>
+            </div>
+
+            <div class="bus h" style="top:170px; left:220px; width:100px"></div>
+            <div class="bus h" style="top:170px; left:540px; width:120px"></div>
+            <div class="bus v" style="top:220px; left:430px; height:120px"></div>
+
+            <div class="packet" id="packet"></div>
+
+        </div>
+
+        <div class="info-area">
+
+            <div class="step-title" id="stepTitle">Step 1: Start</div>
+
+            <div class="explanation" id="explanation">
+                The CPU is ready to begin program execution. The PC register indicates which instruction will be
+                executed next.
+            </div>
+
+            <div class="controls">
+                <button onclick="previousStep()">⬅ Previous</button>
+                <button onclick="nextStep()">Next ➡</button>
+            </div>
+
+            <div class="step-counter" id="counter">
+                Step 1 of 7
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        const steps = [
+            {
+                title: 'Step 1: Program Start',
+                explanation: 'The CPU is waiting to begin execution. The <span class="highlight">PC</span> points to the memory address where the first instruction is stored.',
+                active: ['registers'],
+                packet: [760, 80],
+                registers: { pc: '0', mar: '0', mdr: '---', ir: '---', acc: '0' }
+            },
+            {
+                title: 'Step 2: First Instruction Fetch',
+                explanation: 'The CPU begins the Fetch phase. The value of the PC is copied into the <span class="highlight">MAR</span> register to indicate which memory address will be read.',
+                active: ['memory', 'registers'],
+                packet: [240, 160],
+                registers: { pc: '0', mar: '0', mdr: '---', ir: '---', acc: '0' }
+            },
+            {
+                title: 'Step 3: Memory Sends the Instruction',
+                explanation: 'RAM memory sends the instruction <span class="highlight">LOAD 8</span> to the MDR register using the data bus.',
+                active: ['memory'],
+                packet: [360, 160],
+                registers: { pc: '0', mar: '0', mdr: 'LOAD 8', ir: '---', acc: '0' }
+            },
+            {
+                title: 'Step 4: LOAD Decode',
+                explanation: 'The Control Unit copies the instruction into the IR register and analyzes the LOAD opcode.',
+                active: ['control'],
+                packet: [560, 160],
+                registers: { pc: '0', mar: '0', mdr: 'LOAD 8', ir: 'LOAD 8', acc: '0' }
+            },
+            {
+                title: 'Step 5: LOAD Execution',
+                explanation: 'The LOAD instruction places the value 8 into the ACC accumulator register.',
+                active: ['alu', 'registers'],
+                packet: [760, 300],
+                registers: { pc: '0', mar: '0', mdr: 'LOAD 8', ir: 'LOAD 8', acc: '8' }
+            },
+            {
+                title: 'Step 6: PC Update',
+                explanation: 'The CPU finishes the first instruction and increments the PC to fetch the next instruction.',
+                active: ['registers'],
+                packet: [760, 80],
+                registers: { pc: '1', mar: '0', mdr: 'LOAD 8', ir: 'LOAD 8', acc: '8' }
+            },
+            {
+                title: 'Step 7: ADD 12 Fetch',
+                explanation: 'The CPU begins the Fetch cycle for the second instruction using the PC again.',
+                active: ['memory', 'registers'],
+                packet: [240, 160],
+                registers: { pc: '1', mar: '1', mdr: 'LOAD 8', ir: 'LOAD 8', acc: '8' }
+            },
+            {
+                title: 'Step 8: ADD 12 Read',
+                explanation: 'Memory sends the instruction <span class="highlight">ADD 12</span> into the MDR register.',
+                active: ['memory'],
+                packet: [360, 160],
+                registers: { pc: '1', mar: '1', mdr: 'ADD 12', ir: 'LOAD 8', acc: '8' }
+            },
+            {
+                title: 'Step 9: ADD Decode',
+                explanation: 'The Control Unit interprets the ADD instruction and prepares the ALU to perform an addition.',
+                active: ['control'],
+                packet: [560, 160],
+                registers: { pc: '1', mar: '1', mdr: 'ADD 12', ir: 'ADD 12', acc: '8' }
+            },
+            {
+                title: 'Step 10: Arithmetic Operation',
+                explanation: 'The ALU adds the value 12 to the current accumulator content. The ACC previously contained 8.',
+                active: ['alu'],
+                packet: [430, 340],
+                registers: { pc: '1', mar: '1', mdr: 'ADD 12', ir: 'ADD 12', acc: '8' }
+            },
+            {
+                title: 'Step 11: ADD Result',
+                explanation: 'The result of the operation is stored back into the accumulator. The ACC now contains 20.',
+                active: ['alu', 'registers'],
+                packet: [760, 300],
+                registers: { pc: '1', mar: '1', mdr: 'ADD 12', ir: 'ADD 12', acc: '20' }
+            },
+            {
+                title: 'Step 12: PC Increment',
+                explanation: 'The CPU finishes the second instruction and advances to the next memory address.',
+                active: ['registers'],
+                packet: [760, 80],
+                registers: { pc: '2', mar: '1', mdr: 'ADD 12', ir: 'ADD 12', acc: '20' }
+            },
+            {
+                title: 'Step 13: SUB 5 Fetch',
+                explanation: 'The CPU uses the PC to locate the next instruction in memory.',
+                active: ['memory'],
+                packet: [240, 160],
+                registers: { pc: '2', mar: '2', mdr: 'ADD 12', ir: 'ADD 12', acc: '20' }
+            },
+            {
+                title: 'Step 14: SUB 5 Read',
+                explanation: 'RAM memory transfers the instruction SUB 5 into the MDR register.',
+                active: ['memory'],
+                packet: [360, 160],
+                registers: { pc: '2', mar: '2', mdr: 'SUB 5', ir: 'ADD 12', acc: '20' }
+            },
+            {
+                title: 'Step 15: SUB Decode',
+                explanation: 'The Control Unit detects a subtraction operation and configures the ALU.',
+                active: ['control'],
+                packet: [560, 160],
+                registers: { pc: '2', mar: '2', mdr: 'SUB 5', ir: 'SUB 5', acc: '20' }
+            },
+            {
+                title: 'Step 16: Subtraction Execution',
+                explanation: 'The ALU takes the value stored in the ACC register and subtracts 5 from it.',
+                active: ['alu'],
+                packet: [430, 340],
+                registers: { pc: '2', mar: '2', mdr: 'SUB 5', ir: 'SUB 5', acc: '20' }
+            },
+            {
+                title: 'Step 17: SUB Result',
+                explanation: 'The final subtraction result is stored in the accumulator. The ACC now contains 15.',
+                active: ['alu', 'registers'],
+                packet: [760, 300],
+                registers: { pc: '2', mar: '2', mdr: 'SUB 5', ir: 'SUB 5', acc: '15' }
+            },
+            {
+                title: 'Step 18: STORE 40 Fetch',
+                explanation: 'The CPU begins fetching the last instruction of the program.',
+                active: ['memory'],
+                packet: [240, 160],
+                registers: { pc: '3', mar: '3', mdr: 'SUB 5', ir: 'SUB 5', acc: '15' }
+            },
+            {
+                title: 'Step 19: STORE Decode',
+                explanation: 'The Control Unit interprets that the ACC contents must be sent into memory.',
+                active: ['control'],
+                packet: [560, 160],
+                registers: { pc: '3', mar: '3', mdr: 'STORE 40', ir: 'STORE 40', acc: '15' }
+            },
+            {
+                title: 'Step 20: Memory Write',
+                explanation: 'The value stored in the accumulator travels through the data bus and is written into memory address 40.',
+                active: ['memory', 'alu', 'registers'],
+                packet: [240, 160],
+                registers: { pc: '3', mar: '40', mdr: '15', ir: 'STORE 40', acc: '15' }
+            },
+            {
+                title: 'Step 21: Program Finished',
+                explanation: 'The CPU completed all program instructions. The final stored result was 15.',
+                active: ['registers'],
+                packet: [760, 80],
+                registers: { pc: '4', mar: '40', mdr: '15', ir: 'STORE 40', acc: '15' }
+            }
+        ];
+
+        let current = 0;
+
+        function renderStep() {
+
+            const step = steps[current];
+
+            document.getElementById('stepTitle').innerHTML = step.title;
+            document.getElementById('explanation').innerHTML = step.explanation;
+            document.getElementById('counter').innerHTML = `Step ${current + 1} of ${steps.length}`;
+
+            document.querySelectorAll('.component').forEach(c => {
+                c.classList.remove('active');
+            });
+
+            step.active.forEach(id => {
+                document.getElementById(id).classList.add('active');
+            });
+
+            document.getElementById('pc').innerHTML = step.registers.pc;
+            document.getElementById('mar').innerHTML = step.registers.mar;
+            document.getElementById('mdr').innerHTML = step.registers.mdr;
+            document.getElementById('ir').innerHTML = step.registers.ir;
+            document.getElementById('acc').innerHTML = step.registers.acc;
+
+            document.getElementById('packet').style.left = step.packet[0] + 'px';
+            document.getElementById('packet').style.top = step.packet[1] + 'px';
+        }
+
+        function nextStep() {
+            if (current < steps.length - 1) {
+                current++;
+                renderStep();
+            }
+        }
+
+        function previousStep() {
+            if (current > 0) {
+                current--;
+                renderStep();
+            }
+        }
+
+        renderStep();
+
+    </script>
+
+</body>
+
+</html>
