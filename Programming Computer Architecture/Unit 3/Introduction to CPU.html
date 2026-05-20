@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>CPU Architecture Sim v2.8 - Fixed Default</title>
+    <title>Introduction to CPU</title>
     <style>
         :root {
             --bg-main: #d1d5db;
@@ -293,9 +293,13 @@ MOV CX, AX</textarea>
         let cpu = { AX: 0, BX: 0, CX: 0, PC: 0, IR: "IDLE" };
         let isRunning = false;
 
-        function log(msg) {
+        function log(msg, isHeader = false) {
             const m = document.getElementById('monitor');
-            m.innerHTML = `<span style="color:var(--azure-bright)">[T:${cpu.PC}]</span> ${msg}<br>` + m.innerHTML;
+            if (isHeader) {
+                m.innerHTML = msg + m.innerHTML;
+            } else {
+                m.innerHTML = `<span style="color:var(--azure-bright)">[T:${cpu.PC}]</span> ${msg}<br>` + m.innerHTML;
+            }
         }
 
         function toggleModal(show) { document.getElementById('modal').style.display = show ? 'block' : 'none'; }
@@ -320,12 +324,14 @@ MOV CX, AX</textarea>
         }
 
         async function executeStep() {
-            // Fix: Clean out code comments using the ';' symbol to avoid execution blockages
             const lines = document.getElementById('editor').value.split('\n')
                 .map(line => line.split(';')[0].trim())
                 .filter(l => l !== "");
 
-            if (cpu.PC >= lines.length) { isRunning = false; return; }
+            if (cpu.PC >= lines.length) {
+                isRunning = false;
+                return;
+            }
 
             document.querySelectorAll('.step-pill').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.wire').forEach(w => w.classList.remove('wire-active'));
@@ -367,6 +373,13 @@ MOV CX, AX</textarea>
             setTimeout(() => { document.getElementById('alu-op').innerText = "---"; }, 800);
             cpu.PC++;
             updateUI(dest);
+
+            // Print final banner if program has just reached the end
+            if (cpu.PC === lines.length) {
+                setTimeout(() => {
+                    log(`<div style="color:#ff7d3d; font-weight:bold; margin: 5px 0; border-top: 1px dashed #ff7d3d; padding-top:5px;">[PROGRAM FINISHED]<br>Final Accumulator (AX) = ${cpu.AX}</div>`, true);
+                }, 900);
+            }
         }
 
         function runProgram() {
